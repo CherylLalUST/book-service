@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+
+    tools{
+        maven 'my-maven'
+        jdk 'my-jdk'
+    }
+
+    stages {
+        stage('git') {
+            steps {
+                echo 'clone code from github'
+                git url: 'https://github.com/CherylLalUST/book-service.git',branch:'main'
+            }
+        }
+
+        stage('build') {
+            steps {
+                echo 'build project from maven'
+                bat "mvn clean install -DskipTests"
+            }
+        }
+            stage('test') {
+            steps {
+                echo 'test the project'
+                bat "mvn test"
+            }
+        }
+        stage('pre clean') {
+                    steps {
+                        echo 'deleting the old containers'
+                        bat "docker rm -f book-service-container"
+
+                    }
+                }
+        stage('deploy') {
+            steps {
+                echo 'deploy project'
+                bat "docker build -t book-service-image ."
+                bat "docker run -p 9090:9090 -d --name book-service-container --network library-network book-service-image"
+            }
+        }
+    }
+}
